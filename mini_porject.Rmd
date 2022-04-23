@@ -1,0 +1,358 @@
+---
+title: "Data Wrangling Project"
+author: "Raymond Ogunjimi"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+# OVERVIEW
+
+Answer the questions below. The datasets can be found on 
+[github](https://github.com/jrozra200/Villanova_STAT_4380_Data_Science_Spring_2022/tree/main/Released%20to%20Students/Projects/Data%20Wrangling) and our 
+[google drive folder](https://drive.google.com/drive/u/1/folders/1lK7-T-742p3J3QyV_8WLVySmZqYqkyj3). 
+
+This project is due on April 17. Please submit your Rmd file on Blackboard.
+
+# TEXT WRANGLING
+
+For the following questions, use `grepl()` function. This function can find 
+patterns in text.
+
+1. Read in the Hamster data. Are all of the hamsters named?
+    a. Create a new column called `hname` searches for "NAME" in the `text` 
+    column and creates the value `TRUE` if it is there and `FALSE` if not
+    b. Create a summary variable named `hamster_name` that sums and sorts the 
+    count each value in `hname` from highest count to lowest count
+    c. Output `hamster_name`
+    d. How many posts do not include the name of the hamster?
+2. How many tagged users come from instagram? (hint: use the technique from 
+the last problem)
+
+```{r}
+hamster_data <- read.csv("/Users/ray/Downloads/mini_project/hamster_data.csv")
+#hamster_data %>% head()
+
+FALSE %in% grepl("(?<=HAMSTER NAME: )(.*?)(?=\\n)", hamster_data$text, ignore.case=TRUE, perl = TRUE)
+#is.element(FALSE, grepl("(?<=HAMSTER NAME: )(.*?)(?=\\n)", hamster_data$text, ignore.case=TRUE, perl = TRUE))
+#match(FALSE, grepl("(?<=HAMSTER NAME: )(.*?)(?=\\n)", hamster_data$text, ignore.case=TRUE, perl = TRUE))
+#which(grepl("(?<=HAMSTER NAME: )(.*?)(?=\\n)", hamster_data$text, ignore.case=TRUE, perl = TRUE), FALSE)
+
+hamster_data <- hamster_data %>% mutate(hname = grepl("(NAME)", hamster_data$text, ignore.case=TRUE))
+
+sum(hamster_data$hname == FALSE)
+sum(hamster_data$hname == TRUE)
+
+hamster_name_data <- hamster_data %>% 
+    group_by(user_id, hname) %>% 
+    summarise(hamster_name = sum(hname == TRUE)) %>%
+    arrange(desc(hamster_name))
+
+hamster_data <- hamster_data %>% mutate(hamster_insta = grepl("(instagram)", hamster_data$text, ignore.case=TRUE))
+
+sum(hamster_data$hamster_insta == FALSE)
+sum(hamster_data$hamster_insta == TRUE)
+```
+
+# DISTRIBUTIONS
+
+3. Create a histogram of favorite counts.
+    a. Is the standard amount of bins appropriate? If not, assign the 
+    appropriate number of bins.
+    b. Make the outline of the bars black and the color of the bars navy
+    c. Ensure that the background of the graph is clear (or white)
+    d. Remove any tick marks
+    e. Remove any vertical grid lines. The horizontal grid lines should be light 
+    gray.
+    f. Make sure the axes are labeled nicely
+    g. Make sure there is a title on the plot
+    h. Describe the distribution
+
+```{r}
+ggplot(hamster_data) +
+    scale_x_continuous() +
+    scale_y_continuous() +
+    aes(x=favorite_count) +
+    geom_histogram(binwidth = 15, fill="navy", color="black") +
+    ggtitle("Plot of Favorite Counts for Each Hamster Tweet") +
+    xlab("Favorite Count") +
+    ylab("Number of Tweets") +
+    theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"),
+        axis.ticks.x=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid.minor.y=element_line(colour="gray"),
+        panel.grid.major.y=element_line(colour="gray"),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.title = element_text(color="black", size=14, face="bold.italic", hjust=0.5),
+        axis.title.x = element_text(color="black", size=10, face="bold"),
+        axis.title.y = element_text(color="black", size=10, face="bold"))
+
+```
+
+The distribution looks like a bell curve centered around about 250-300 retweets for most posts (80 posts in a bin of size 15) with a lot of posts also having no (0) retweets at all.
+
+4. Which hamster got the most favorites?
+
+```{r}
+fav_sort_hamster <- hamster_data %>% arrange(desc(favorite_count))
+
+regmatches(fav_sort_hamster$text,regexpr("(?<=HAMSTER NAME: )(.*?)(?=\\n)", fav_sort_hamster$text, perl = TRUE))[1]
+```
+
+5. Create a histogram of retweet counts.
+    a. Is the standard amount of bins appropriate? If not, assign the 
+    appropriate number of bins.
+    b. Make the outline of the bars white and the color of the bars purple
+    c. Ensure that the background of the graph is light gray
+    d. Change the color of any tick marks to purple
+    e. Remove any vertical grid lines. The horizontal grid lines should be white.
+    f. Make sure the axes are labeled nicely
+    g. Make sure there is a title on the plot
+    h. Describe the distribution
+
+```{r}
+ggplot(hamster_data) +
+    scale_x_continuous() +
+    scale_y_continuous() +
+    aes(x=retweet_count) +
+    geom_histogram(binwidth = 5, fill="navy", color="black") +
+    ggtitle("Plot of Retweet Counts for Each Hamster Tweet") +
+    xlab("Retweet Count") +
+    ylab("Number of Tweets") +
+    theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"),
+        axis.ticks.x=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid.minor.y=element_line(colour="gray"),
+        panel.grid.major.y=element_line(colour="gray"),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.title = element_text(color="black", size=14, face="bold.italic", hjust=0.5),
+        axis.title.x = element_text(color="black", size=10, face="bold"),
+        axis.title.y = element_text(color="black", size=10, face="bold"))
+
+```
+
+The distribution looks like a bell curve centered around about 50 retweets for most posts (150 posts in a bin of size 5) with a lot of posts also having no (0) retweets at all.
+
+6. Which hamster got the most retweets?
+
+```{r}
+rt_sort_hamster <- hamster_data %>% arrange(desc(retweet_count))
+regmatches(rt_sort_hamster$text,regexpr("(?<=HAMSTER NAME: )(.*?)(?=\\n)", rt_sort_hamster$text, perl = TRUE))[1]
+```
+
+# CORRELATION
+
+7. Is there a correlation between age of tweet (in days) and favorite count? You 
+will need to create a new column that counts the age of the tweet. I am asking 
+if the longer a tweet is up, does it get more likes? Or is it just a standard 1 
+day of visibility or something like that? (hint: remember the `lubridate` 
+package)
+
+```{r}
+hamster_data <- hamster_data %>%
+    mutate(age_in_days = interval(ymd_hms(hamster_data$created_at),now()) %/% days(1))
+
+
+ggplot() +
+    aes(x = hamster_data$age_in_days, y = hamster_data$favorite_count)+
+    geom_point()+
+    geom_smooth(method = NULL)
+```
+There doesn't seem to be any obvious correlation. The favorite counts are about evenly distributed over all ages.
+
+# OTHER DATA MINING
+8. What is the first day in the dataset? What is the last day in the dataset?
+```{r}
+hamster_data %>%
+    arrange(ymd_hms(hamster_data$created_at)) %>%
+    head(1)["created_at"]
+
+#hamster_data %>%
+#    arrange(desc(ymd_hms(hamster_data$created_at))) %>%
+#    head(1) %>%
+#    select("created_at")
+
+hamster_data %>%
+    arrange(desc(ymd_hms(hamster_data$created_at))) %>%
+    head(1) %>%
+    pluck("created_at")
+```
+9. Are there any days with multiple posts? How many days?
+```{r}
+hamster_data %>%
+    group_by(date(ymd_hms(hamster_data$created_at))) %>%
+    summarize(count = n()) %>%
+    arrange(desc(count)) %>%
+    count(count > 1)
+```
+
+# WEATHER DATA
+
+10. Read in the weather data. 
+    a. What are the first and last day in the dataset?
+    b. How many weather stations are there?
+    c. Do all the stations have the same amount of entries?
+    d. Which station has the most entries?
+
+```{r}
+weather_data <- read.csv("/Users/ray/Downloads/mini_project/weather_data.csv")
+weather_data %>% head(20) 
+
+weather_data <- subset(weather_data, !is.na(TAVG))
+
+weather_data %>%
+    arrange(ymd(weather_data$DATE)) %>%
+    head(1)["DATE"]
+
+weather_data %>%
+    arrange(desc(ymd(weather_data$DATE))) %>%
+    head(1)["DATE"]
+
+length(unique(weather_data$NAME))
+
+weather_data %>% 
+    group_by(NAME) %>%
+    tally()
+
+#weather_data %>% count(NAME)
+```
+
+# JOINING DATA
+
+11. Join the hamster data to the weather data for the top station from the 
+previous problem (if there are any ties, pick your favorite). What issues do you 
+have and what choices did you make to join this data together?
+
+```{r}
+hamster_joinable <- hamster_data %>% mutate(join_date = date(ymd_hms(hamster_data$created_at)))
+weather_joinable <- weather_data %>% mutate(join_date = date(ymd(weather_data$DATE)))
+joined <- merge(x=weather_joinable,y=hamster_joinable,by="join_date")
+joined <- within(joined, rm("DATE","created_at"))
+```
+
+The type of join was one choice (date) and the tie to join by was another (inner/natural).
+
+# PLOTS AND LABELS
+
+12. Plot the daily average temperature from the last 30 days of the dataset. 
+Create a data label that adds the favorite count of the daily hamster to the 
+plot (if there are multiple, you may choose one or paste all together).
+
+```{r}
+weather_data_30 <- weather_data %>%
+    mutate(days_since_last = interval(ymd(weather_data$DATE),max(ymd(weather_data$DATE))) %/% days(1)) %>%
+    arrange(DATE)
+
+weather_data_30_toplot <- subset(weather_data_30, days_since_last <= 30) 
+
+weather_data_30_toplot <- aggregate(x=weather_data_30_toplot$TAVG, by=list(weather_data_30_toplot$DATE), FUN=mean, na.rm = TRUE)
+#weather_data_30_toplot <- aggregate(weather_data_30_toplot$TAVG ~ weather_data_30_toplot$DATE, weather_data_30_toplot, mean)
+
+ggplot(weather_data_30_toplot) +
+    aes(x=Group.1, y = x) +
+    geom_point() +
+    ggtitle("Average Temperatures for Last 30 Days of Dataset") +
+    xlab("Date") +
+    ylab("Temperature") +
+    theme(axis.text.x = element_text(angle = 90))
+
+weather_data_30_wit_hams <- joined %>%
+    mutate(days_since_last = interval(ymd(joined$join_date),max(ymd(joined$join_date))) %/% days(1)) %>%
+    arrange(join_date)
+
+weather_data_30_wit_hams <- subset(weather_data_30_wit_hams, days_since_last <= 30) 
+
+weather_data_30_wit_hams <- setNames(aggregate(x=list(weather_data_30_wit_hams$TAVG,weather_data_30_wit_hams$favorite_count), by=list(weather_data_30_wit_hams$join_date), FUN=mean, na.rm = TRUE), c("join_date","avg_temp","fav_count"))
+
+ggplot(weather_data_30_wit_hams) +
+    geom_point(aes(x = join_date, y = fav_count/5, color = "Favorite Count")) +
+    geom_point(aes(x = join_date, y = avg_temp, color = "Average Temp")) +
+    scale_y_continuous(name = "Temperature", sec.axis = sec_axis( trans=~.*5, name="Favorite Count")) +
+    ggtitle("Average Temperatures for Last 30 Days of Dataset") +
+    xlab("Date") +
+    theme(axis.text.x = element_text(angle = 90))
+```
+
+# MINING THE WEATHER DATA
+
+13. What is the average precipitation (`PRCP`) at "PHILADELPHIA INTERNATIONAL 
+AIRPORT, PA US"?
+
+```{r}
+phl_weather <- weather_data %>% filter(weather_data$NAME == "PHILADELPHIA INTERNATIONAL AIRPORT, PA US")
+mean(phl_weather$PRCP, na.rm=TRUE)
+```
+
+14. What is the overall average (`TAVG`), minimum (`TMIN`), and maximum (`TMAX`) 
+temperature of this data at "PHILADELPHIA INTERNATIONAL AIRPORT, PA US"?
+
+```{r}
+mean(phl_weather$TAVG, na.rm = TRUE)
+min(phl_weather$TMIN, na.rm = TRUE)
+max(phl_weather$TMAX, na.rm = TRUE)
+```
+
+15. What is the average, minimum, and maximum temperature from this data by 
+month at "PHILADELPHIA INTERNATIONAL AIRPORT, PA US"?
+
+```{r}
+phl_weather %>% group_by(month(ymd(DATE))) %>% 
+    summarize(month = month(ymd(DATE)), 
+        temp_avg = mean(TAVG, na.rm = TRUE),
+        temp_min = min(TMIN, na.rm = TRUE),
+        temp_max = max(TMAX, na.rm = TRUE)) %>%
+    unique()
+```
+
+16. What is the average, minimum, and maximum from this data by year at 
+"PHILADELPHIA INTERNATIONAL AIRPORT, PA US"?
+
+```{r}
+phl_weather %>% group_by(year(ymd(DATE))) %>% 
+    summarize(year = year(ymd(DATE)), 
+        temp_avg = mean(TAVG, na.rm = TRUE),
+        temp_min = min(TMIN, na.rm = TRUE),
+        temp_max = max(TMAX, na.rm = TRUE)) %>%
+    unique()
+```
+
+17. What is the average, minimum, and maximum from this data by year and month 
+at "PHILADELPHIA INTERNATIONAL AIRPORT, PA US"?
+
+```{r}
+phl_weather %>% group_by(year(ymd(DATE)), month(ymd(DATE))) %>% 
+    summarize(year = year(ymd(DATE)), 
+        month = month(ymd(DATE)),
+        temp_avg = mean(TAVG, na.rm = TRUE),
+        temp_min = min(TMIN, na.rm = TRUE),
+        temp_max = max(TMAX, na.rm = TRUE)) %>%
+    unique()
+```
+
+
+# MAKING SENSE OF MANY GROUPS
+
+18. Plot the average daily temperature for the entire dataset grouped by station. 
+What issues do you see with the plot? Make it the clearest possible. 
+
+
+```{r}
+daily_temps <- weather_data %>% group_by(NAME, DATE) %>% 
+    summarize(temp_avg = mean(TAVG, na.rm = TRUE)) %>%
+    unique()
+
+ggplot(daily_temps) +
+    geom_point(aes(x = ymd(DATE), y = temp_avg, color = NAME)) +
+    ggtitle("Average Temperatures per Day for Each Location") +
+    xlab("Date") +
+    ylab("Average Temperature") +
+    theme(axis.text.x = element_text(angle = 90))
+```
+There are a lot of data points on this plot. That is the biggest issue but overall it shows a clear trend of temperatures as expected in the DE/PA region
